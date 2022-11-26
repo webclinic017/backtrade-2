@@ -58,7 +58,8 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         Parameters
         ----------
         df : DataFrame
-            Must have columns 'close', 'high', 'low'
+            Must have columns 'open', 'close', 'high', 'low'.
+            df.loc[index, :] will be passed to `next` method.
         maker_fee : float
             Maker fee.
         taker_fee : float
@@ -137,7 +138,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         balance_quote_history: Series[float] = Series(np.nan, index=df.index)
         equity_quote_history: Series[float] = Series(np.nan, index=df.index)
         finished_orders_history: Series[list[FinishedOrder[_IndexType, Any]]] = Series(
-            np.nan, index=df.index, dtype=list
+            np.nan, index=df.index, dtype=object
         )
 
         for index, row in df.iterrows():
