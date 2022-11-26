@@ -38,6 +38,27 @@ Install this via pip (or your favourite package manager):
 
 `pip install backtrade`
 
+## Usage
+
+```python
+from backtrade import Backtester, CloseData, LimitOrder, MarketOrder, _IndexType
+
+# Define my strategy
+class MyBacktest(Backtester):
+    def init(self):
+        pass
+
+    def next(
+        self, close_data: "CloseData[_IndexType]", row: "Series[Any]"
+    ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
+        yield MarketOrder(size=1 / close_data.close)
+        yield MarketOrder(size=-1 / close_data.close)
+
+# Run backtest and plot results
+bt = MyBacktest()
+bt(df, maker_fee=-0.025 * 0.01, taker_fee=0.001).plot()
+```
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
