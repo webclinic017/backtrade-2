@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import warnings
 from abc import ABCMeta, abstractmethod
 from logging import getLogger
-from typing import Any, Generic, Iterable, Union, final
+from typing import Any, Generic, Iterable, final
 
 import numpy as np
 from exceptiongroup import ExceptionGroup
@@ -50,7 +52,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         maker_fee: float,
         taker_fee: float,
         balance_init: float = 1,
-    ) -> "BacktestResult[_IndexType]":
+    ) -> BacktestResult[_IndexType]:
         """Initialize the backtester.
 
         Parameters
@@ -125,22 +127,22 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         self.init()
 
         # Calculate
-        open_orders: tuple[Union[LimitOrder, MarketOrder], ...] = ()
+        open_orders: tuple[LimitOrder | MarketOrder, ...] = ()
         last_close: float | None = None
         position = 0.0
         balance = balance_init
 
-        position_history: "Series[float]" = Series(np.nan, index=df.index)
-        position_quote_history: "Series[float]" = Series(np.nan, index=df.index)
-        balance_quote_history: "Series[float]" = Series(np.nan, index=df.index)
-        equity_quote_history: "Series[float]" = Series(np.nan, index=df.index)
-        finished_orders_history: "Series[list[FinishedOrder[_IndexType, Any]]]" = (
-            Series(np.nan, index=df.index, dtype=list)
+        position_history: Series[float] = Series(np.nan, index=df.index)
+        position_quote_history: Series[float] = Series(np.nan, index=df.index)
+        balance_quote_history: Series[float] = Series(np.nan, index=df.index)
+        equity_quote_history: Series[float] = Series(np.nan, index=df.index)
+        finished_orders_history: Series[list[FinishedOrder[_IndexType, Any]]] = Series(
+            np.nan, index=df.index, dtype=list
         )
 
         for index, row in df.iterrows():
             index: _IndexType  # type: ignore
-            row: "Series[float]"  # type: ignore
+            row: Series[float]  # type: ignore
             open_ = row["open"]
             high = row["high"]
             low = row["low"]
@@ -194,7 +196,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             finished_orders_history[index] = finished_orders
 
         order_count = finished_orders_history.apply(len).sum()
-        filled_rate: "Series[float]" = finished_orders_history.apply(
+        filled_rate: Series[float] = finished_orders_history.apply(
             lambda x: sum(1 for o in x if o.filled) / len(x) if x else np.nan
         )
 
@@ -215,8 +217,8 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
 
     @abstractmethod
     def on_close(
-        self, data: "CloseData[_IndexType]", row: "Series[Any]"
-    ) -> Iterable[Union[LimitOrder, MarketOrder]]:
+        self, data: CloseData[_IndexType], row: Series[Any]
+    ) -> Iterable[LimitOrder | MarketOrder]:
         """Override this method to implement your strategy.
         Unfilled orders would be automatically canceled."""
         yield from ()
