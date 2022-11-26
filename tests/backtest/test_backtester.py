@@ -21,7 +21,7 @@ def generate_random_ohlcv(n: int) -> DataFrame:
 
 class TestBacktester(TestCase):
     def setUp(self) -> None:
-        self.n = np.random.randint(100, 500)
+        self.n = np.random.randint(50, 150)
         self.maker_fee = np.random.rand() * 0.01 - 0.005
         self.taker_fee = np.random.rand() * 0.01
         self.balance_init = np.random.rand() * 1000
