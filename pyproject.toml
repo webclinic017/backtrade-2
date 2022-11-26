@@ -28,10 +28,6 @@ attrs = "^22.1.0"
 pandas = "^1.5.2"
 matplotlib = "^3.6.2"
 exceptiongroup = "^1.0.4"
-asserts = "^0.12.0"
-
-[tool.poetry.group.dev]
-optional = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"
