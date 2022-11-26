@@ -244,4 +244,4 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             CloseData object.
         row: Series
             Row of the DataFrame passed to __call__."""
-        yield from ()
+        yield from ()  # pragma: no cover
