@@ -224,7 +224,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             equity_quote=equity_quote_history.rename("equity_quote"),
             finished_orders=finished_orders_history.rename("finished_orders"),
             filled_rate=filled_rate.rename("filled_rate"),
-            order_count=order_count,
+            order_count=order_count.rename("order_count"),
         )
 
     def init(self) -> None:
