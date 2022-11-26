@@ -7,7 +7,7 @@ from pandas import Series, concat
 
 from backtrade.logic import FinishedOrder
 
-from ..dtypes import _IndexType
+from ..order import _IndexType
 
 __all__ = ["BacktestResult", "CloseData"]
 
@@ -52,3 +52,7 @@ class BacktestResult(Generic[_IndexType]):
         )
         df.plot(subplots=True, sharex=True)
         return fig
+
+    @property
+    def flatten_finished_orders(self) -> "Series[FinishedOrder[_IndexType, Any]]":
+        return self.finished_orders.explode().dropna()

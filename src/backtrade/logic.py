@@ -1,151 +1,150 @@
-from enum import Enum
-from typing import Generic, Union
+from typing import Generic
 
 import attrs
 
-from .dtypes import LimitOrder, MarketOrder, _IndexType, _OrderType
+from .finished_order import FinishedOrder, FinishedOrderState
+from .order import LimitOrder, _IndexType, _OrderType
 
 
-class FinishedOrderState(Enum):
-    FilledTaker = 0
-    FilledMaker = 1
-    CancelledNotFilled = 2
-    CancelledPostOnly = 3
-
-
-@attrs.frozen(kw_only=True)
-class FinishedOrder(Generic[_IndexType, _OrderType]):
-    index: _IndexType
+@attrs.frozen(kw_only=True, slots=False)
+class ToLimitOrderArgs(Generic[_OrderType]):
     order: _OrderType
-    balance_decrement: float
-    state: FinishedOrderState
-
-    @property
-    def filled(self) -> bool:
-        return self.state in (
-            FinishedOrderState.FilledTaker,
-            FinishedOrderState.FilledMaker,
-        )
+    last_close: float
 
 
-def to_limit_order(
-    order: Union[LimitOrder, MarketOrder],
-    base_price: float,
-) -> LimitOrder:
-    if isinstance(order, LimitOrder):
-        return order
-    if order.size > 0:
-        price = base_price * 2
-    elif order.size < 0:
-        price = base_price / 2
+@attrs.frozen(kw_only=True, slots=False)
+class ProcessOrderArgsBase(
+    ToLimitOrderArgs[_OrderType], Generic[_IndexType, _OrderType]
+):
+    taker_fee: float
+    maker_fee: float
+    index: _IndexType
+
+
+@attrs.frozen(kw_only=True, slots=False)
+class ProcessSellOrderArgs(ProcessOrderArgsBase[_IndexType, _OrderType]):
+    high: float
+
+
+@attrs.frozen(kw_only=True, slots=False)
+class ProcessBuyOrderArgs(ProcessOrderArgsBase[_IndexType, _OrderType]):
+    low: float
+
+
+def to_limit_order(args: ToLimitOrderArgs[_OrderType]) -> LimitOrder:
+    if isinstance(args.order, LimitOrder):
+        return args.order
+    if args.order.size > 0:
+        price = args.last_close * 2
+    elif args.order.size < 0:
+        price = args.last_close / 2
     else:
-        price = base_price
-    order = LimitOrder(
-        size=order.size,
+        price = args.last_close
+    return LimitOrder(
+        size=args.order.size,
         price=price,
         post_only=False,
     )
-    return order
 
 
 def process_buy_order(
-    order: _OrderType,
-    open: float,
-    low: float,
-    taker_fee: float,
-    maker_fee: float,
-    index: _IndexType,
+    args: ProcessBuyOrderArgs[_IndexType, _OrderType]
 ) -> "FinishedOrder[_IndexType, _OrderType]":
-    if order.size <= 0:
+    if args.order.size <= 0:
         raise ValueError("Buy order size must be positive")
-    limit_order = to_limit_order(order, open)
-    if limit_order.price >= open:
+    limit_order = to_limit_order(args)
+    if limit_order.price >= args.last_close:
         # taker
         if limit_order.post_only:
             return FinishedOrder(
-                index=index,
-                order=order,
+                index=args.index,  # type: ignore
+                order=args.order,  # type: ignore
                 balance_decrement=0,
                 state=FinishedOrderState.CancelledPostOnly,
             )
         else:
             return FinishedOrder(
-                index=index,
-                order=order,
-                balance_decrement=order.size * open * (1 + taker_fee),
+                index=args.index,  # type: ignore
+                order=args.order,  # type: ignore
+                balance_decrement=args.order.size
+                * args.last_close
+                * (1 + args.taker_fee),
                 state=FinishedOrderState.FilledTaker,
             )
-    elif limit_order.price >= low:
+    elif limit_order.price >= args.low:
         return FinishedOrder(
-            index=index,
-            order=order,
-            balance_decrement=order.size * limit_order.price * (1 + maker_fee),
+            index=args.index,  # type: ignore
+            order=args.order,  # type: ignore
+            balance_decrement=args.order.size
+            * limit_order.price
+            * (1 + args.maker_fee),
             state=FinishedOrderState.FilledMaker,
         )
     else:
         return FinishedOrder(
-            index=index,
-            order=order,
+            index=args.index,  # type: ignore
+            order=args.order,  # type: ignore
             balance_decrement=0,
             state=FinishedOrderState.CancelledNotFilled,
         )
 
 
 def process_sell_order(
-    order: _OrderType,
-    open: float,
-    high: float,
-    taker_fee: float,
-    maker_fee: float,
-    index: _IndexType,
+    args: ProcessSellOrderArgs[_IndexType, _OrderType]
 ) -> "FinishedOrder[_IndexType, _OrderType]":
-    if order.size >= 0:
+    if args.order.size >= 0:
         raise ValueError("Sell order size must be negative")
-    limit_order = to_limit_order(order, open)
-    if limit_order.price <= open:
+    limit_order = to_limit_order(args)
+    if limit_order.price <= args.last_close:
         # taker
         if limit_order.post_only:
             return FinishedOrder(
-                index=index,
-                order=order,
+                index=args.index,  # type: ignore
+                order=args.order,  # type: ignore
                 balance_decrement=0,
                 state=FinishedOrderState.CancelledPostOnly,
             )
         else:
             return FinishedOrder(
-                index=index,
-                order=order,
-                balance_decrement=order.size * open * (1 - taker_fee),
+                index=args.index,  # type: ignore
+                order=args.order,  # type: ignore
+                balance_decrement=args.order.size
+                * args.last_close
+                * (1 - args.taker_fee),
                 state=FinishedOrderState.FilledTaker,
             )
-    elif limit_order.price <= high:
+    elif limit_order.price <= args.high:
         return FinishedOrder(
-            index=index,
-            order=order,
-            balance_decrement=order.size * limit_order.price * (1 - maker_fee),
+            index=args.index,  # type: ignore
+            order=args.order,  # type: ignore
+            balance_decrement=args.order.size
+            * limit_order.price
+            * (1 - args.maker_fee),
             state=FinishedOrderState.FilledMaker,
         )
     else:
         return FinishedOrder(
-            index=index,
-            order=order,
+            index=args.index,  # type: ignore
+            order=args.order,  # type: ignore
             balance_decrement=0,
             state=FinishedOrderState.CancelledNotFilled,
         )
 
 
+@attrs.frozen(kw_only=True, slots=False)
+class ProcessOrderArgs(
+    ProcessBuyOrderArgs[_IndexType, _OrderType],
+    ProcessSellOrderArgs[_IndexType, _OrderType],
+):
+    pass
+
+
 def process_order(
-    order: _OrderType,
-    open: float,
-    high: float,
-    low: float,
-    taker_fee: float,
-    maker_fee: float,
-    index: _IndexType,
+    args: ProcessOrderArgs[_IndexType, _OrderType]
 ) -> "FinishedOrder[_IndexType, _OrderType]":
-    if order.size > 0:
-        return process_buy_order(order, open, low, taker_fee, maker_fee, index)
-    elif order.size < 0:
-        return process_sell_order(order, open, high, taker_fee, maker_fee, index)
+    if args.order.size > 0:
+        return process_buy_order(args)
+    elif args.order.size < 0:
+        return process_sell_order(args)
     else:
-        raise ValueError("Order size must be non-zero", order)
+        raise ValueError("Order size must be non-zero", args.order)

@@ -9,9 +9,9 @@ import numpy as np
 from exceptiongroup import ExceptionGroup
 from pandas import DataFrame, Series
 
-from backtrade.logic import FinishedOrder, process_order
+from backtrade.logic import FinishedOrder, ProcessOrderArgs, process_order
 
-from ..dtypes import LimitOrder, MarketOrder, _IndexType
+from ..order import LimitOrder, MarketOrder, _IndexType
 from .dtypes import BacktestResult, CloseData
 
 __all__ = ["Backtester"]
@@ -22,17 +22,24 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
 
     Supports hedge mode, different `maker` / `taker` fees,
     `market`, `limit`, `post-only limit` orders.
-    Every unfilled orders are to be automatically canceled on the next time step.
+
+    Every unfilled orders are to be automatically canceled
+    on the next time step.
 
     Example
     ----------
     >>> import pandas as pd
-    >>> from backtrade import Backtester
+    >>> from backtrade import (Backtester, CloseData, LimitOrder,
+            MarketOrder, _IndexType)
     >>> df = pd.concat([open, close, high, low, signal, ATR], axis=1)
-    >>> class MyBacktester(Backtester):
+    >>> class MyBacktester(Backtester[_IndexType]):
     >>>    def init(self):
     >>>        pass
-    >>>    def next(self, index, row):
+    >>>    def on_close(
+                self,
+                close_data: "CloseData[_IndexType]",
+                row: "Series[Any]"
+            ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
     >>>        if row["signal"] == 1:
     >>>            yield Order(size=1, price=row['close'] - row['ATR'] * 0.5,
                                limit=True, post_only=True)
@@ -84,7 +91,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
                         + f"but got {df.columns}"
                     )
                 )
-        else:
+        if not errors:
             if (df["open"] > df["high"]).any():
                 errors.append(ValueError("open price must be less than high price"))
             if (df["open"] < df["low"]).any():
@@ -162,7 +169,15 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
                 if order.size == 0.0:
                     continue
                 finished_order = process_order(
-                    order, last_close, high, low, maker_fee, taker_fee, index
+                    ProcessOrderArgs(
+                        order=order,
+                        last_close=last_close,
+                        high=high,
+                        low=low,
+                        maker_fee=maker_fee,
+                        taker_fee=taker_fee,
+                        index=index,
+                    )
                 )
                 balance -= finished_order.balance_decrement
                 if finished_order.filled:
@@ -196,7 +211,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             equity_quote_history[index] = equity
             finished_orders_history[index] = finished_orders
 
-        order_count = finished_orders_history.apply(len).sum()
+        order_count = finished_orders_history.apply(len)
         filled_rate: Series[float] = finished_orders_history.apply(
             lambda x: sum(1 for o in x if o.filled) / len(x) if x else np.nan
         )
@@ -221,5 +236,12 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         self, data: CloseData[_IndexType], row: Series[Any]
     ) -> Iterable[LimitOrder | MarketOrder]:
         """Override this method to implement your strategy.
-        Unfilled orders would be automatically canceled."""
+        Unfilled orders would be automatically canceled.
+
+        Parameters
+        ----------
+        data: CloseData
+            CloseData object.
+        row: Series
+            Row of the DataFrame passed to __call__."""
         yield from ()
