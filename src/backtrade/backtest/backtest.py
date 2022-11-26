@@ -127,7 +127,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         # Calculate
         open_orders: tuple[Union[LimitOrder, MarketOrder], ...] = ()
         last_close: float | None = None
-        position = 0
+        position = 0.0
         balance = balance_init
 
         position_history: "Series[float]" = Series(np.nan, index=df.index)
@@ -155,8 +155,8 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             # Iterate each open orders
             finished_orders: list[FinishedOrder[_IndexType, Any]] = []
             for order in open_orders:
-                assert last_close is not None
-                if order.size == 0:
+                assert last_close is not None  # nosec
+                if order.size == 0.0:
                     continue
                 finished_order = process_order(
                     order, last_close, high, low, maker_fee, taker_fee, index

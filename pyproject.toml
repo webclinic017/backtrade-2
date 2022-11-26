@@ -28,6 +28,7 @@ attrs = "^22.1.0"
 pandas = "^1.5.2"
 matplotlib = "^3.6.2"
 exceptiongroup = "^1.0.4"
+asserts = "^0.12.0"
 
 [tool.poetry.group.dev]
 optional = true
@@ -47,7 +48,6 @@ optional = true
 myst-parser = ">=0.16"
 sphinx = ">=4.0"
 sphinx-rtd-theme = ">=1.0"
-
 
 [tool.poetry.group.example.dependencies]
 yfinance = "^0.1.87"
@@ -81,6 +81,7 @@ profile = "black"
 known_first_party = ["backtrade", "tests"]
 
 [tool.mypy]
+ignore_missing_imports = true
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_incomplete_defs = true

@@ -63,7 +63,7 @@ repos:
     hooks:
       - id: mypy
         args: [--install-types, --non-interactive]
-        additional_dependencies: []
+        additional_dependencies: ["attrs"]
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.4
     hooks:
