@@ -26,6 +26,8 @@ packages = [
 python = "^3.8"
 attrs = "^22.1.0"
 pandas = "^1.5.2"
+matplotlib = "^3.6.2"
+exceptiongroup = "^1.0.4"
 
 [tool.poetry.group.dev]
 optional = true
@@ -35,6 +37,8 @@ pytest = "^7.0"
 pytest-cov = "^3.0"
 pre-commit = "^2.20.0"
 black = "^22.10.0"
+autoflake = "^2.0.0"
+mypy = "^0.991"
 
 [tool.poetry.group.docs]
 optional = true
@@ -43,6 +47,13 @@ optional = true
 myst-parser = ">=0.16"
 sphinx = ">=4.0"
 sphinx-rtd-theme = ">=1.0"
+
+
+[tool.poetry.group.example.dependencies]
+yfinance = "^0.1.87"
+pandas-ta = "^0.3.14b0"
+ipykernel = "^6.17.1"
+requests-cache = "^0.9.7"
 
 [tool.semantic_release]
 branch = "main"
