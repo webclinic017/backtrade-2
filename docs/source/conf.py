@@ -29,7 +29,11 @@ author = "34j"
 # ones.
 extensions = [
     "myst_parser",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
 ]
+napoleon_google_docstring = False
 
 # The suffix of source filenames.
 source_suffix = [".rst", ".md"]
