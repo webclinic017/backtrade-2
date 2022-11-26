@@ -16,4 +16,4 @@ project_slug: backtrade
 run_poetry_install: false
 setup_github: false
 setup_pre_commit: false
-version: 0.0.1
+version: 0.0.0
