@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "backtrade"
-version = "0.0.0"
+version = "0.1.0"
 description = "A small Python package for backtesting."
 authors = ["34j <55338215+34j@users.noreply.github.com>"]
 license = "GNU General Public License v3"
