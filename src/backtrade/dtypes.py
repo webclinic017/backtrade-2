@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from abc import ABCMeta
-from typing import Hashable, TypeVar
+from typing import Hashable, TypeVar, Union
 
 import attrs
 
@@ -23,4 +21,4 @@ class MarketOrder(OrderBase):
 
 
 _IndexType = TypeVar("_IndexType", bound=Hashable)
-_OrderType = TypeVar("_OrderType", bound=LimitOrder | MarketOrder)
+_OrderType = TypeVar("_OrderType", bound=Union[LimitOrder, MarketOrder])
