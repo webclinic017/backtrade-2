@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.0 (2022-11-28)
+### Feature
+* Add validator to attrs class ([#12](https://github.com/34j/backtrade/issues/12)) ([`01622c1`](https://github.com/34j/backtrade/commit/01622c1e196017b208da015e19f5ad95d5984e9d))
+
 ## v0.1.0 (2022-11-26)
 ### Feature
 * Trigger release ([`1001dc7`](https://github.com/34j/backtrade/commit/1001dc7b1eb5eb4d5d4f1a646b15835b596f9270))
