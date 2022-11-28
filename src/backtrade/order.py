@@ -3,16 +3,18 @@ from typing import Hashable, TypeVar, Union
 
 import attrs
 
+from .validator import _na_validator
+
 
 @attrs.frozen(kw_only=True)
 class OrderBase(metaclass=ABCMeta):
-    size: float
+    size: float = attrs.field(validator=_na_validator)
 
 
 @attrs.frozen(kw_only=True)
 class LimitOrder(OrderBase):
-    price: float
-    post_only: bool
+    price: float = attrs.field(validator=_na_validator)
+    post_only: bool = attrs.field(validator=_na_validator)
 
 
 @attrs.frozen(kw_only=True)
