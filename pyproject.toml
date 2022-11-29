@@ -28,6 +28,8 @@ attrs = "^22.1.0"
 pandas = "^1.5.2"
 matplotlib = "^3.6.2"
 exceptiongroup = "^1.0.4"
+joblib = "^1.2.0"
+plottable = "^0.1.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"
@@ -36,6 +38,7 @@ pre-commit = "^2.20.0"
 black = "^22.10.0"
 autoflake = "^2.0.0"
 mypy = "^0.991"
+matplotx = "^0.3.10"
 
 [tool.poetry.group.docs]
 optional = true

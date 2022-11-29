@@ -1,12 +1,18 @@
+from random import random
 from typing import Any, Iterable, Union
 from unittest import TestCase
 
+import matplotlib.style
+import matplotx.styles
 import numpy as np
+import pandas as pd
 from exceptiongroup import ExceptionGroup
 from pandas import DataFrame, Series
 
 from backtrade import Backtester, CloseData, LimitOrder, MarketOrder, _IndexType
 from backtrade.logic import FinishedOrderState
+
+matplotlib.style.use(matplotx.styles.dracula)
 
 
 def generate_random_ohlcv(n: int) -> DataFrame:
@@ -16,6 +22,7 @@ def generate_random_ohlcv(n: int) -> DataFrame:
     assert len(df) == n
     df["low"] = df[["open", "close"]].min(axis=1) * (1 - np.random.rand(n) * 0.1)
     df["high"] = df[["open", "close"]].max(axis=1) * (1 + np.random.rand(n) * 0.1)
+    df.index = pd.date_range("2020-01-01", periods=n, freq="1h")
     return df
 
 
@@ -25,6 +32,35 @@ class TestBacktester(TestCase):
         self.maker_fee = np.random.rand() * 0.01 - 0.005
         self.taker_fee = np.random.rand() * 0.01
         self.balance_init = np.random.rand() * 1000
+
+    def test_plot(self):
+        class MyBacktest(Backtester[_IndexType]):
+            def init(self):
+                pass
+
+            def on_close(
+                self, close_data: "CloseData[_IndexType]", row: "Series[Any]"
+            ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
+                if random() > 0.7:
+                    yield MarketOrder(size=1)
+                if random() > 0.5:
+                    yield LimitOrder(size=1, price=row["close"] - 0.1, post_only=True)
+
+        df = generate_random_ohlcv(self.n)
+        bt: "Backtester[int]" = MyBacktest()
+        res = bt(
+            df,
+            maker_fee=self.maker_fee,
+            taker_fee=self.taker_fee,
+            balance_init=self.balance_init,
+        )
+        res.logarithmic = False
+        res.plot()
+        sr = res.annual_sharp_ratio
+        res.logarithmic = True
+        self.assertNotEqual(sr, res.annual_sharp_ratio)
+        res.plot()
+        # plt.show()
 
     def test_market_both(self):
         class MyBacktest(Backtester[_IndexType]):
