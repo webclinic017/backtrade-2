@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.3.0 (2022-11-29)
+### Feature
+* Add metrics ([#13](https://github.com/34j/backtrade/issues/13)) ([`05e6af6`](https://github.com/34j/backtrade/commit/05e6af6ded42f0f60fd22a38401200e715fbdc3d))
+
 ## v0.2.0 (2022-11-28)
 ### Feature
 * Add validator to attrs class ([#12](https://github.com/34j/backtrade/issues/12)) ([`01622c1`](https://github.com/34j/backtrade/commit/01622c1e196017b208da015e19f5ad95d5984e9d))
