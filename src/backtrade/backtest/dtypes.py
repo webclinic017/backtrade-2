@@ -97,7 +97,13 @@ class BacktestResult(Generic[_IndexType]):
 
     @property
     def max_drawdown(self) -> float:
-        return ta.max_drawdown(self.equity_quote, method="percent")
+        if self.logarithmic:
+            return ta.max_drawdown(self.equity_quote, method="percent")
+        else:
+            return (
+                ta.max_drawdown(self.equity_quote, method="percent")
+                * self.equity_quote.iat[0]
+            )
 
     @property
     def annual_volatility(self) -> float:
