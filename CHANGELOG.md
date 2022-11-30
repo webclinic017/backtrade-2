@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.1 (2022-11-30)
+### Fix
+* Fix wrong fee calculation ([#18](https://github.com/34j/backtrade/issues/18)) ([`abfaa6a`](https://github.com/34j/backtrade/commit/abfaa6a4443f3373cd69aed18ebf3eac9ef701af))
+
 ## v0.4.0 (2022-11-30)
 ### Feature
 * Add more metrics ([#16](https://github.com/34j/backtrade/issues/16)) ([`e6fb20b`](https://github.com/34j/backtrade/commit/e6fb20b9d7539fb2e78e382ee8aed758ee30e704))
