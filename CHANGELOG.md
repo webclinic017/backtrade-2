@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.4.0 (2022-11-30)
+### Feature
+* Add more metrics ([#16](https://github.com/34j/backtrade/issues/16)) ([`e6fb20b`](https://github.com/34j/backtrade/commit/e6fb20b9d7539fb2e78e382ee8aed758ee30e704))
+
 ## v0.3.1 (2022-11-29)
 ### Fix
 * Fix drawdown calculation ([#14](https://github.com/34j/backtrade/issues/14)) ([`181aa7e`](https://github.com/34j/backtrade/commit/181aa7e9b90eb0bc1af29ca3fdddd9ea91367d2c))
