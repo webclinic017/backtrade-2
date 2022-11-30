@@ -70,7 +70,7 @@ def process_buy_order(
                 balance_decrement=args.order.size
                 * args.last_close
                 * (1 + args.taker_fee),
-                fee=args.order.size * args.last_close * args.taker_fee,
+                fee=abs(args.order.size) * args.last_close * args.taker_fee,
                 state=FinishedOrderState.FilledTaker,
             )
     elif limit_order.price >= args.low:
@@ -80,7 +80,7 @@ def process_buy_order(
             balance_decrement=args.order.size
             * limit_order.price
             * (1 + args.maker_fee),
-            fee=args.order.size * limit_order.price * args.maker_fee,
+            fee=abs(args.order.size) * limit_order.price * args.maker_fee,
             state=FinishedOrderState.FilledMaker,
         )
     else:
@@ -116,7 +116,7 @@ def process_sell_order(
                 balance_decrement=args.order.size
                 * args.last_close
                 * (1 - args.taker_fee),
-                fee=args.order.size * args.last_close * args.taker_fee,
+                fee=abs(args.order.size) * args.last_close * args.taker_fee,
                 state=FinishedOrderState.FilledTaker,
             )
     elif limit_order.price <= args.high:
@@ -126,7 +126,7 @@ def process_sell_order(
             balance_decrement=args.order.size
             * limit_order.price
             * (1 - args.maker_fee),
-            fee=args.order.size * limit_order.price * args.maker_fee,
+            fee=abs(args.order.size) * limit_order.price * args.maker_fee,
             state=FinishedOrderState.FilledMaker,
         )
     else:
