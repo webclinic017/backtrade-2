@@ -18,6 +18,7 @@ class FinishedOrder(Generic[_IndexType, _OrderType]):
     index: _IndexType
     order: _OrderType
     balance_decrement: float
+    fee: float
     state: FinishedOrderState
 
     @property

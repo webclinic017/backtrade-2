@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 from pandas import Series, Timedelta, Timestamp, concat
 from plottable import ColDef, Table
 
-from backtrade.logic import FinishedOrder
+from backtrade.logic import FinishedOrder, FinishedOrderState
 
 from ..order import _IndexType
 
@@ -38,6 +38,8 @@ class BacktestResult(Generic[_IndexType]):
     balance_quote: "Series[float]" = attrs.field(on_setattr=attrs.setters.frozen)
     equity_quote: "Series[float]" = attrs.field(on_setattr=attrs.setters.frozen)
     filled_rate: "Series[float]" = attrs.field(on_setattr=attrs.setters.frozen)
+    maker_fee_rate: float = attrs.field(on_setattr=attrs.setters.frozen)
+    taker_fee_rate: float = attrs.field(on_setattr=attrs.setters.frozen)
     finished_orders: "Series[FinishedOrder[_IndexType, Any]]" = attrs.field(
         on_setattr=attrs.setters.frozen
     )
@@ -71,7 +73,10 @@ class BacktestResult(Generic[_IndexType]):
 
     def _profit(self) -> "Series[float]":
         equity_resampled = (
-            self.equity_quote.resample(self.freq).first().fillna(method="ffill")
+            self.equity_quote.resample(self.freq)
+            .first()
+            .fillna(method="ffill")
+            .dropna()
         )
         if self.logarithmic:
             profit = equity_resampled.pct_change() - 1
@@ -110,7 +115,57 @@ class BacktestResult(Generic[_IndexType]):
         return self.profit.std() * (Timedelta(days=365) / self.period) ** 0.5
 
     @property
-    def all_metrics(self) -> Series:
+    def total_fee(self) -> float:
+        return self.finished_orders.apply(lambda x: x.fee).sum()
+
+    @property
+    def total_maker_fee(self) -> float:
+        return self.finished_orders.apply(
+            lambda x: x.fee if x.state == FinishedOrderState.FilledMaker else 0
+        ).sum()
+
+    @property
+    def total_taker_fee(self) -> float:
+        return self.finished_orders.apply(
+            lambda x: x.fee if x.state == FinishedOrderState.FilledTaker else 0
+        ).sum()
+
+    @property
+    def fee_ratio(self) -> float:
+        return self.total_fee / (
+            self.equity_quote.iat[-1] - self.equity_quote.iat[0] + self.total_fee
+        )
+
+    @property
+    def total_orders_count(self) -> int:
+        return self.finished_orders.size
+
+    @property
+    def state_maker_ratio(self) -> float:
+        return self.finished_orders.apply(
+            lambda x: 1 if x.state == FinishedOrderState.FilledMaker else 0
+        ).mean()
+
+    @property
+    def state_taker_ratio(self) -> float:
+        return self.finished_orders.apply(
+            lambda x: 1 if x.state == FinishedOrderState.FilledTaker else 0
+        ).mean()
+
+    @property
+    def state_cancelled_not_filled_ratio(self) -> float:
+        return self.finished_orders.apply(
+            lambda x: 1 if x.state == FinishedOrderState.CancelledNotFilled else 0
+        ).mean()
+
+    @property
+    def state_cancelled_post_only_ratio(self) -> float:
+        return self.finished_orders.apply(
+            lambda x: 1 if x.state == FinishedOrderState.CancelledPostOnly else 0
+        ).mean()
+
+    @property
+    def _all_metrics(self) -> Series:
         s = Series(
             {
                 "Frequency (User Specified)": self.freq,
@@ -120,15 +175,38 @@ class BacktestResult(Generic[_IndexType]):
                 "Annual Sharp Ratio": self.annual_sharp_ratio,
                 "Annual Sortino Ratio": self.annual_sortino_ratio,
                 "Max Drawdown": f"{self.max_drawdown:.3%}",
+                "Maker Fee Rate (User Specified)": f"{self.maker_fee_rate:.5%}",
+                "Taker Fee Rate (User Specified)": f"{self.taker_fee_rate:.5%}",
+                "Total Fee": self.total_fee,
+                "Total Maker Fee": self.total_maker_fee,
+                "Total Taker Fee": self.total_taker_fee,
+                "Total Fee / Total Profit without Fee": f"{self.fee_ratio:.3%}",
+                "State: Maker": f"{self.state_maker_ratio:.3%}"
+                if self.total_orders_count > 0
+                else "N/A",
+                "State: Taker": f"{self.state_taker_ratio:.3%}"
+                if self.total_orders_count > 0
+                else "N/A",
+                "State: Cancelled (Not Filled)"
+                + "": f"{self.state_cancelled_not_filled_ratio:.3%}"
+                if self.total_orders_count > 0
+                else "N/A",
+                "State: Cancelled (Post Only)"
+                + "": f"{self.state_cancelled_post_only_ratio:.3%}"
+                if self.total_orders_count > 0
+                else "N/A",
             },
-            name="Metrics",
-        ).rename_axis("Metric")
+            name="Value",
+        ).rename_axis("Metric Name")
+        s[s.apply(lambda x: isinstance(x, float))] = s[
+            s.apply(lambda x: isinstance(x, float))
+        ].apply(lambda x: f"{x:.3f}")
         return s
 
     def plot(self) -> Figure:
         # Create Subfigures
         fig = plt.figure(figsize=(16, 9), constrained_layout=True)
-        subfigs: list[Figure] = fig.subfigures(1, 2, width_ratios=[3, 1.2])
+        subfigs: list[Figure] = fig.subfigures(1, 2, width_ratios=[3, 1.3])
 
         # First Subfigure
         axes = subfigs[0].subplots(7, 1, sharex=True)
@@ -177,13 +255,13 @@ class BacktestResult(Generic[_IndexType]):
         )
 
         # Second Subfigure
-        axes = subfigs[1].subplots(3, 1, gridspec_kw={"height_ratios": [2, 3, 3]})
+        axes = subfigs[1].subplots(3, 1, gridspec_kw={"height_ratios": [1.3, 1, 1]})
 
         df.index.name = "DateTime"
         df = df.loc[:, ~df.columns.str.contains("SMA")]
         df.columns = df.columns.str.replace(" ", "\n")
 
-        Table(self.all_metrics.to_frame().round(4), ax=axes[0])
+        Table(self._all_metrics.to_frame(), ax=axes[0])
         coldefs = [
             ColDef(
                 "DateTime",

@@ -215,6 +215,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         filled_rate: Series[float] = finished_orders_history.apply(
             lambda x: sum(1 for o in x if o.filled) / len(x) if x else np.nan
         )
+        finished_orders_history_ = finished_orders_history.explode().dropna()
 
         return BacktestResult(
             close=df["close"],
@@ -222,9 +223,11 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             position_quote=position_quote_history.rename("position_quote"),
             balance_quote=balance_quote_history.rename("balance_quote"),
             equity_quote=equity_quote_history.rename("equity_quote"),
-            finished_orders=finished_orders_history.rename("finished_orders"),
+            finished_orders=finished_orders_history_.rename("finished_orders"),
             filled_rate=filled_rate.rename("filled_rate"),
             order_count=order_count.rename("order_count"),
+            maker_fee_rate=maker_fee,
+            taker_fee_rate=taker_fee,
         )
 
     def init(self) -> None:

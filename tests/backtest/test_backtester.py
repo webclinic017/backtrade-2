@@ -1,3 +1,4 @@
+import os
 from random import random
 from typing import Any, Iterable, Union
 from unittest import TestCase
@@ -7,6 +8,7 @@ import matplotx.styles
 import numpy as np
 import pandas as pd
 from exceptiongroup import ExceptionGroup
+from matplotlib import pyplot as plt
 from pandas import DataFrame, Series
 
 from backtrade import Backtester, CloseData, LimitOrder, MarketOrder, _IndexType
@@ -60,7 +62,8 @@ class TestBacktester(TestCase):
         res.logarithmic = True
         self.assertNotEqual(sr, res.annual_sharp_ratio)
         res.plot()
-        # plt.show()
+        if os.name == "nt" and os.getenv("CI") is None:
+            plt.show()
 
     def test_market_both(self):
         class MyBacktest(Backtester[_IndexType]):

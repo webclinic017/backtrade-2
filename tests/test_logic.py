@@ -56,6 +56,7 @@ class TestLogic(TestCase):
                 index=0,
                 order=order,
                 balance_decrement=1,
+                fee=0,
                 state=FinishedOrderState.FilledMaker,
             ),
         )
@@ -74,6 +75,7 @@ class TestLogic(TestCase):
                 index=0,
                 order=order,
                 balance_decrement=1,
+                fee=0,
                 state=FinishedOrderState.FilledTaker,
             ),
         )
@@ -95,6 +97,7 @@ class TestLogic(TestCase):
                 index=0,
                 order=order,
                 balance_decrement=-1,
+                fee=0,
                 state=FinishedOrderState.FilledMaker,
             ),
         )
@@ -108,6 +111,7 @@ class TestLogic(TestCase):
                 index=0,
                 order=order,
                 balance_decrement=-1,
+                fee=0,
                 state=FinishedOrderState.FilledTaker,
             ),
         )
