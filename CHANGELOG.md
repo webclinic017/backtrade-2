@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.6.0 (2022-12-01)
+### Feature
+* Show tqdm bar ([#20](https://github.com/34j/backtrade/issues/20)) ([`db30e8f`](https://github.com/34j/backtrade/commit/db30e8f143519bff778416437f9b7c36699855b9))
+
 ## v0.5.0 (2022-12-01)
 ### Feature
 * Add more metrics ([#19](https://github.com/34j/backtrade/issues/19)) ([`a696a39`](https://github.com/34j/backtrade/commit/a696a3962b8463406d7a81630b1f903d3fa2c82f))
