@@ -8,6 +8,7 @@ from typing import Any, Generic, Iterable, final
 import numpy as np
 from exceptiongroup import ExceptionGroup
 from pandas import DataFrame, Series
+from tqdm import tqdm
 
 from backtrade.logic import FinishedOrder, ProcessOrderArgs, process_order
 
@@ -59,6 +60,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         maker_fee: float,
         taker_fee: float,
         balance_init: float = 1,
+        use_tqdm: bool = True,
     ) -> BacktestResult[_IndexType]:
         """Initialize the backtester.
 
@@ -148,7 +150,8 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             np.nan, index=df.index, dtype=object
         )
 
-        for index, row in df.iterrows():
+        pbar = tqdm(df.iterrows(), total=len(df), disable=not use_tqdm)
+        for index, row in pbar:
             index: _IndexType  # type: ignore
             row: Series[float]  # type: ignore
             open_ = row["open"]
