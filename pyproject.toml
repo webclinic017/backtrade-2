@@ -30,6 +30,8 @@ matplotlib = "^3.6.2"
 exceptiongroup = "^1.0.4"
 joblib = "^1.2.0"
 plottable = "^0.1.5"
+scipy = "^1.9.3"
+fitter = "^1.5.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"

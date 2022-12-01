@@ -60,6 +60,8 @@ def process_buy_order(
                 index=args.index,  # type: ignore
                 order=args.order,  # type: ignore
                 balance_decrement=0,
+                executed_price=None,
+                quote_size=0,
                 fee=0,
                 state=FinishedOrderState.CancelledPostOnly,
             )
@@ -70,6 +72,8 @@ def process_buy_order(
                 balance_decrement=args.order.size
                 * args.last_close
                 * (1 + args.taker_fee),
+                executed_price=args.last_close,
+                quote_size=args.order.size * args.last_close,
                 fee=abs(args.order.size) * args.last_close * args.taker_fee,
                 state=FinishedOrderState.FilledTaker,
             )
@@ -80,6 +84,8 @@ def process_buy_order(
             balance_decrement=args.order.size
             * limit_order.price
             * (1 + args.maker_fee),
+            executed_price=limit_order.price,
+            quote_size=args.order.size * limit_order.price,
             fee=abs(args.order.size) * limit_order.price * args.maker_fee,
             state=FinishedOrderState.FilledMaker,
         )
@@ -88,6 +94,8 @@ def process_buy_order(
             index=args.index,  # type: ignore
             order=args.order,  # type: ignore
             balance_decrement=0,
+            executed_price=None,
+            quote_size=0,
             fee=0,
             state=FinishedOrderState.CancelledNotFilled,
         )
@@ -106,6 +114,8 @@ def process_sell_order(
                 index=args.index,  # type: ignore
                 order=args.order,  # type: ignore
                 balance_decrement=0,
+                executed_price=None,
+                quote_size=0,
                 fee=0,
                 state=FinishedOrderState.CancelledPostOnly,
             )
@@ -116,6 +126,8 @@ def process_sell_order(
                 balance_decrement=args.order.size
                 * args.last_close
                 * (1 - args.taker_fee),
+                executed_price=args.last_close,
+                quote_size=args.order.size * args.last_close,
                 fee=abs(args.order.size) * args.last_close * args.taker_fee,
                 state=FinishedOrderState.FilledTaker,
             )
@@ -126,6 +138,8 @@ def process_sell_order(
             balance_decrement=args.order.size
             * limit_order.price
             * (1 - args.maker_fee),
+            executed_price=limit_order.price,
+            quote_size=args.order.size * limit_order.price,
             fee=abs(args.order.size) * limit_order.price * args.maker_fee,
             state=FinishedOrderState.FilledMaker,
         )
@@ -134,6 +148,8 @@ def process_sell_order(
             index=args.index,  # type: ignore
             order=args.order,  # type: ignore
             balance_decrement=0,
+            executed_price=None,
+            quote_size=0,
             fee=0,
             state=FinishedOrderState.CancelledNotFilled,
         )

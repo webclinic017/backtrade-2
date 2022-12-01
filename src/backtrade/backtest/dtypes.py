@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Any, Generic
 
 import attrs
+import fitter
 import joblib
 import pandas as pd
 import pandas_ta as ta
@@ -141,6 +142,10 @@ class BacktestResult(Generic[_IndexType]):
         return self.finished_orders.size
 
     @property
+    def total_order_amount(self) -> float:
+        return self.finished_orders.apply(lambda x: abs(x.quote_size)).sum()
+
+    @property
     def state_maker_ratio(self) -> float:
         return self.finished_orders.apply(
             lambda x: 1 if x.state == FinishedOrderState.FilledMaker else 0
@@ -165,12 +170,22 @@ class BacktestResult(Generic[_IndexType]):
         ).mean()
 
     @property
+    def win_ratio(self) -> float:
+        return self.profit.apply(lambda x: 1 if x > 0 else 0).mean()
+
+    @property
     def _all_metrics(self) -> Series:
         s = Series(
             {
                 "Frequency (User Specified)": self.freq,
                 "Logarithmic (User Specified)": self.logarithmic,
                 "Period": self.period,
+                "Win Ratio": self.win_ratio,
+                "Profit Average": self.profit.mean(),
+                "Profit Median": self.profit.median(),
+                "Profit Std": self.profit.std(),
+                "Profit Skewness": self.profit.skew(),
+                "Profit Kurtosis": self.profit.kurt(),
                 "Annual Volatility": self.annual_volatility,
                 "Annual Sharp Ratio": self.annual_sharp_ratio,
                 "Annual Sortino Ratio": self.annual_sortino_ratio,
@@ -181,6 +196,8 @@ class BacktestResult(Generic[_IndexType]):
                 "Total Maker Fee": self.total_maker_fee,
                 "Total Taker Fee": self.total_taker_fee,
                 "Total Fee / Total Profit without Fee": f"{self.fee_ratio:.3%}",
+                "Total Order Amount": self.total_order_amount,
+                "Total Orders Count": self.total_orders_count,
                 "State: Maker": f"{self.state_maker_ratio:.3%}"
                 if self.total_orders_count > 0
                 else "N/A",
@@ -252,16 +269,35 @@ class BacktestResult(Generic[_IndexType]):
                 df.columns[df.columns.str.contains("Order Count")],
             ],
             ax=axes,
+            kind="line",
         )
 
         # Second Subfigure
-        axes = subfigs[1].subplots(3, 1, gridspec_kw={"height_ratios": [1.3, 1, 1]})
+        axes = subfigs[1].subplots(
+            5, 1, gridspec_kw={"height_ratios": [1.95, 0.6, 0.5, 1, 1]}
+        )
 
         df.index.name = "DateTime"
         df = df.loc[:, ~df.columns.str.contains("SMA")]
         df.columns = df.columns.str.replace(" ", "\n")
 
+        # Metrics
         Table(self._all_metrics.to_frame(), ax=axes[0])
+
+        self.profit.plot(ax=axes[1], kind="hist", bins=100, title="Profit")
+        plt.sca(axes[1])
+        fitter_ = fitter.Fitter(
+            self.profit.dropna(), distributions=fitter.get_common_distributions()
+        )
+        fitter_.fit()
+        fit_summary = (
+            fitter_.summary(plot=True, clf=False)
+            .sort_values("sumsquare_error")[["sumsquare_error", "ks_pvalue"]]
+            .round(3)
+        )
+        Table(fit_summary, ax=axes[2], textprops={"size": 8})
+
+        # Trades
         coldefs = [
             ColDef(
                 "DateTime",
@@ -272,13 +308,13 @@ class BacktestResult(Generic[_IndexType]):
         textprops = {"size": 9.5}
         Table(
             df.head(10).round(2),
-            ax=axes[1],
+            ax=axes[3],
             column_definitions=coldefs,
             textprops=textprops,
         )
         Table(
             df.tail(10).round(2),
-            ax=axes[2],
+            ax=axes[4],
             column_definitions=coldefs,
             textprops=textprops,
         )

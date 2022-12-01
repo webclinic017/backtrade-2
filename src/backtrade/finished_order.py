@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Generic
 
@@ -18,6 +20,8 @@ class FinishedOrder(Generic[_IndexType, _OrderType]):
     index: _IndexType
     order: _OrderType
     balance_decrement: float
+    executed_price: float | None
+    quote_size: float
     fee: float
     state: FinishedOrderState
 
