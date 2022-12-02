@@ -81,7 +81,7 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         taker_fee_split = np.full(n_splits, taker_fee)
         balance_init_split = np.full(n_splits, balance_init)
         name_split = np.full(n_splits, name)
-        logrithmic_split = np.full(n_splits, logarithmic)
+        logarithmic_split = np.full(n_splits, logarithmic)
         results: list[BacktestResult[_IndexType]] | None = joblib.Parallel(
             n_jobs=-1, verbose=10
         )(
@@ -91,16 +91,16 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
                 taker_fee=taker_fee,
                 balance_init=balance_init,
                 n_splits=1,
-                logrithmic=logrithmic,
+                logarithmic=logarithmic,
                 name=name,
                 use_tqdm=False,
             )
-            for df, maker_fee, taker_fee, balance_init, logrithmic, name in zip(
+            for df, maker_fee, taker_fee, balance_init, logarithmic, name in zip(
                 df_split,
                 maker_fee_split,
                 taker_fee_split,
                 balance_init_split,
-                logrithmic_split,
+                logarithmic_split,
                 name_split,
             )
         )
