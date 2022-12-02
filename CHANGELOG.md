@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.1 (2022-12-02)
+### Fix
+* Fix OrderBase typing ([#22](https://github.com/34j/backtrade/issues/22)) ([`7db5e20`](https://github.com/34j/backtrade/commit/7db5e204a43073e86427e1a5d7589d2676ff5087))
+
 ## v0.7.0 (2022-12-02)
 ### Feature
 * Add __add__ and __mul__ for results ([#21](https://github.com/34j/backtrade/issues/21)) ([`04a2c71`](https://github.com/34j/backtrade/commit/04a2c7164a93db815e0add43cf91428e5a959261))
