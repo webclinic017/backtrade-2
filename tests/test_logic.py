@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest import TestCase
 
 from backtrade.logic import (
@@ -125,7 +127,7 @@ class TestLogic(TestCase):
         )
 
     def test_errors(self):
-        def create_args(size: int) -> "ProcessOrderArgs[int, MarketOrder]":
+        def create_args(size: int) -> ProcessOrderArgs[int, MarketOrder]:
             return ProcessOrderArgs(
                 order=MarketOrder(size=size),
                 last_close=1,

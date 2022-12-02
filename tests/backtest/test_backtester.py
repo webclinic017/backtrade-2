@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import os
 from random import random
-from typing import Any, Iterable, Union
+from typing import Any, Iterable
 from unittest import TestCase
 
 import matplotlib.style
@@ -41,26 +43,33 @@ class TestBacktester(TestCase):
                 pass
 
             def on_close(
-                self, close_data: "CloseData[_IndexType]", row: "Series[Any]"
-            ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
+                self, close_data: CloseData[_IndexType], row: Series[Any]
+            ) -> Iterable[MarketOrder | LimitOrder]:
                 if random() > 0.7:
                     yield MarketOrder(size=1)
                 if random() > 0.5:
                     yield LimitOrder(size=1, price=row["close"] - 0.1, post_only=True)
 
         df = generate_random_ohlcv(self.n)
-        bt: "Backtester[int]" = MyBacktest()
+        bt: Backtester[int] = MyBacktest()
         res = bt(
             df,
             maker_fee=self.maker_fee,
             taker_fee=self.taker_fee,
             balance_init=self.balance_init,
         )
+        # Log = False
         res.logarithmic = False
         res.plot()
         sr = res.annual_sharp_ratio
+
+        # Log = True
         res.logarithmic = True
         self.assertNotEqual(sr, res.annual_sharp_ratio)
+        res.plot()
+
+        # Add
+        res = res + res
         res.plot()
         if os.name == "nt" and os.getenv("CI") is None:
             plt.show()
@@ -71,13 +80,13 @@ class TestBacktester(TestCase):
                 pass
 
             def on_close(
-                self, close_data: "CloseData[_IndexType]", row: "Series[Any]"
-            ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
+                self, close_data: CloseData[_IndexType], row: Series[Any]
+            ) -> Iterable[MarketOrder | LimitOrder]:
                 yield MarketOrder(size=1 / close_data.close)
                 yield MarketOrder(size=-1 / close_data.close)
 
         df = generate_random_ohlcv(self.n)
-        bt: "Backtester[int]" = MyBacktest()
+        bt: Backtester[int] = MyBacktest()
         res = bt(
             df,
             maker_fee=self.maker_fee,
@@ -102,13 +111,13 @@ class TestBacktester(TestCase):
                 pass
 
             def on_close(
-                self, close_data: "CloseData[_IndexType]", row: "Series[Any]"
-            ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
+                self, close_data: CloseData[_IndexType], row: Series[Any]
+            ) -> Iterable[MarketOrder | LimitOrder]:
                 yield LimitOrder(size=1, price=0, post_only=False)
                 yield LimitOrder(size=-1, price=99999, post_only=False)
 
         df = generate_random_ohlcv(self.n)
-        bt: "Backtester[int]" = MyBacktest()
+        bt: Backtester[int] = MyBacktest()
         res = bt(
             df,
             maker_fee=self.maker_fee,
@@ -125,13 +134,13 @@ class TestBacktester(TestCase):
                 pass
 
             def on_close(
-                self, close_data: "CloseData[_IndexType]", row: "Series[Any]"
-            ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
+                self, close_data: CloseData[_IndexType], row: Series[Any]
+            ) -> Iterable[MarketOrder | LimitOrder]:
                 yield LimitOrder(size=1, price=99999, post_only=True)
                 yield LimitOrder(size=-1, price=0, post_only=True)
 
         df = generate_random_ohlcv(self.n)
-        bt: "Backtester[int]" = MyBacktest()
+        bt: Backtester[int] = MyBacktest()
         res = bt(
             df,
             maker_fee=self.maker_fee,
@@ -148,13 +157,13 @@ class TestBacktester(TestCase):
                 pass
 
             def on_close(
-                self, close_data: "CloseData[_IndexType]", row: "Series[Any]"
-            ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
+                self, close_data: CloseData[_IndexType], row: Series[Any]
+            ) -> Iterable[MarketOrder | LimitOrder]:
                 yield LimitOrder(size=0, price=99999, post_only=True)
                 yield MarketOrder(size=0)
 
         df = generate_random_ohlcv(self.n)
-        bt: "Backtester[int]" = MyBacktest()
+        bt: Backtester[int] = MyBacktest()
         res = bt(
             df,
             maker_fee=self.maker_fee,
@@ -168,8 +177,8 @@ class TestBacktester(TestCase):
     def test_errors(self):
         class EmptyBacktest(Backtester[_IndexType]):
             def on_close(
-                self, close_data: "CloseData[_IndexType]", row: "Series[Any]"
-            ) -> "Iterable[Union[MarketOrder, LimitOrder]]":
+                self, close_data: CloseData[_IndexType], row: Series[Any]
+            ) -> Iterable[MarketOrder | LimitOrder]:
                 yield from ()
 
         df = DataFrame(
@@ -181,7 +190,7 @@ class TestBacktester(TestCase):
             }
         )
         df.index = np.random.randint(0, 10, self.n)
-        bt: "Backtester[int]" = EmptyBacktest()
+        bt: Backtester[int] = EmptyBacktest()
         with self.assertRaises(ExceptionGroup) as ecm:
             with self.assertWarns(UserWarning):
                 bt(df, maker_fee=0, taker_fee=-1, balance_init=-1)

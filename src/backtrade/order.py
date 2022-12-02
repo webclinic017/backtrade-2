@@ -10,6 +10,16 @@ from .validator import _na_validator
 class OrderBase(metaclass=ABCMeta):
     size: float = attrs.field(validator=_na_validator)
 
+    def __mul__(self, other: float) -> "OrderBase":
+        if not isinstance(other, float):
+            return NotImplemented  # type: ignore
+        if other < 0:
+            raise ValueError(f"Cannot multiply by negative number: {other}")
+        return attrs.evolve(self, size=self.size * other)
+
+    def __div__(self, other: float) -> "OrderBase":
+        return self * (1 / other)
+
 
 @attrs.frozen(kw_only=True)
 class LimitOrder(OrderBase):

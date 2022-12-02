@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import warnings
 from abc import ABCMeta, abstractmethod
+from functools import reduce
 from logging import getLogger
 from typing import Any, Generic, Iterable, final
 
+import attrs
+import joblib
 import numpy as np
 from exceptiongroup import ExceptionGroup
 from pandas import DataFrame, Series
@@ -52,6 +55,73 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
 
     """
 
+    def _parrarel(
+        self,
+        df: DataFrame,
+        *,
+        maker_fee: float,
+        taker_fee: float,
+        balance_init: float = 1,
+        name: str | None = None,
+        n_splits: int = -1,
+        logarithmic: bool = True,
+    ) -> BacktestResult[_IndexType]:
+        if n_splits == 0:
+            raise ValueError("n_splits must be not 0")
+        if n_splits < -joblib.parallel.cpu_count():
+            raise ValueError(
+                "n_splits must be greater than "
+                + f"-cpu_count={-joblib.parallel.cpu_count()}"
+            )
+        if n_splits < 0:
+            n_splits = joblib.parallel.cpu_count() + n_splits + 1
+
+        df_split = np.array_split(df, n_splits)
+        maker_fee_split = np.full(n_splits, maker_fee)
+        taker_fee_split = np.full(n_splits, taker_fee)
+        balance_init_split = np.full(n_splits, balance_init)
+        name_split = np.full(n_splits, name)
+        logrithmic_split = np.full(n_splits, logarithmic)
+        results: list[BacktestResult[_IndexType]] | None = joblib.Parallel(
+            n_jobs=-1, verbose=10
+        )(
+            joblib.delayed(self)(
+                df,
+                maker_fee=maker_fee,
+                taker_fee=taker_fee,
+                balance_init=balance_init,
+                n_splits=1,
+                logrithmic=logrithmic,
+                name=name,
+                use_tqdm=False,
+            )
+            for df, maker_fee, taker_fee, balance_init, logrithmic, name in zip(
+                df_split,
+                maker_fee_split,
+                taker_fee_split,
+                balance_init_split,
+                logrithmic_split,
+                name_split,
+            )
+        )
+        if results is None:
+            raise ValueError("Joblib returned None.")
+
+        if logarithmic:
+            result = reduce(
+                lambda x, y: x + y * (x.equity_quote[-1] / y.equity_quote[0]), results
+            )
+            result = attrs.evolve(result, name=name)
+        else:
+            result = reduce(lambda x, y: x + y, results)
+            result = attrs.evolve(
+                result,
+                name=name,
+                equity_quote=result.equity_quote - balance_init * (n_splits - 1),
+                balance_quote=result.balance_quote - balance_init * (n_splits - 1),
+            )
+        return result
+
     @final
     def __call__(
         self,
@@ -60,6 +130,9 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         maker_fee: float,
         taker_fee: float,
         balance_init: float = 1,
+        name: str | None = None,
+        n_splits: int = 1,
+        logarithmic: bool = True,
         use_tqdm: bool = True,
     ) -> BacktestResult[_IndexType]:
         """Initialize the backtester.
@@ -75,6 +148,8 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             Taker fee.
         balance_init : float, optional
             Initial balance, by default 1
+        name : str, optional
+            Name of the backtest, by default None
         """
 
         # Check arguments
@@ -127,6 +202,18 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
         if errors:
             raise ExceptionGroup(
                 "Invalid arguments" + str([e.args[0] for e in errors]), errors
+            )
+
+        # Multiprocessing
+        if n_splits != 1:
+            return self._parrarel(
+                df,
+                maker_fee=maker_fee,
+                taker_fee=taker_fee,
+                balance_init=balance_init,
+                name=name,
+                n_splits=n_splits,
+                logarithmic=logarithmic,
             )
 
         df = df.copy()
@@ -214,23 +301,19 @@ class Backtester(Generic[_IndexType], metaclass=ABCMeta):
             equity_quote_history[index] = equity
             finished_orders_history[index] = finished_orders
 
-        order_count = finished_orders_history.apply(len)
-        filled_rate: Series[float] = finished_orders_history.apply(
-            lambda x: sum(1 for o in x if o.filled) / len(x) if x else np.nan
-        )
-        finished_orders_history_ = finished_orders_history.explode().dropna()
+        finished_orders_exploded = finished_orders_history.explode().dropna()
 
         return BacktestResult(
+            name=name,
             close=df["close"],
             position=position_history.rename("position"),
             position_quote=position_quote_history.rename("position_quote"),
             balance_quote=balance_quote_history.rename("balance_quote"),
             equity_quote=equity_quote_history.rename("equity_quote"),
-            finished_orders=finished_orders_history_.rename("finished_orders"),
-            filled_rate=filled_rate.rename("filled_rate"),
-            order_count=order_count.rename("order_count"),
+            finished_orders=finished_orders_exploded.rename("finished_orders"),
             maker_fee_rate=maker_fee,
             taker_fee_rate=taker_fee,
+            logarithmic=logarithmic,
         )
 
     def init(self) -> None:
