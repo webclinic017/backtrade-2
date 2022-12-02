@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.2 (2022-12-02)
+### Fix
+* Fix typo ([#23](https://github.com/34j/backtrade/issues/23)) ([`3293d5b`](https://github.com/34j/backtrade/commit/3293d5be0ef2b91888d9e707ff6378a9c37a294c))
+
 ## v0.7.1 (2022-12-02)
 ### Fix
 * Fix OrderBase typing ([#22](https://github.com/34j/backtrade/issues/22)) ([`7db5e20`](https://github.com/34j/backtrade/commit/7db5e204a43073e86427e1a5d7589d2676ff5087))
