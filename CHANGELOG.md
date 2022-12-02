@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v0.7.0 (2022-12-02)
+### Feature
+* Add __add__ and __mul__ for results ([#21](https://github.com/34j/backtrade/issues/21)) ([`04a2c71`](https://github.com/34j/backtrade/commit/04a2c7164a93db815e0add43cf91428e5a959261))
+
 ## v0.6.0 (2022-12-01)
 ### Feature
 * Show tqdm bar ([#20](https://github.com/34j/backtrade/issues/20)) ([`db30e8f`](https://github.com/34j/backtrade/commit/db30e8f143519bff778416437f9b7c36699855b9))
